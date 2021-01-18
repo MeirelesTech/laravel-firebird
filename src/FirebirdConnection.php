@@ -6,10 +6,10 @@ use Exception;
 use Firebird\Query\Builder as FirebirdQueryBuilder;
 use Firebird\Query\Grammars\Firebird1Grammar as Firebird1QueryGrammar;
 use Firebird\Query\Grammars\Firebird2Grammar as Firebird2QueryGrammar;
-use Firebird\Query\Processors\FirebirdProcessor as FirebirdProcessors;
 use Firebird\Schema\Builder as FirebirdSchemaBuilder;
 use Firebird\Schema\Grammars\FirebirdGrammar as FirebirdSchemaGrammar;
 use Firebird\Support\Version;
+use Firebird\Query\Processors\FirebirdProcessor;
 use Illuminate\Database\Connection as DatabaseConnection;
 
 class FirebirdConnection extends DatabaseConnection
@@ -27,16 +27,6 @@ class FirebirdConnection extends DatabaseConnection
             case Version::FIREBIRD_25:
                 return new Firebird2QueryGrammar;
         }
-    }
-
-    /**
-     * Get the default post processor instance.
-     *
-     * @return \Firebird\Query\Processors\FirebirdProcessor
-     */
-    protected function getDefaultPostProcessor()
-    {
-        return new FirebirdProcessors;
     }
 
     /**
@@ -61,6 +51,11 @@ class FirebirdConnection extends DatabaseConnection
     protected function getDefaultSchemaGrammar()
     {
         return $this->withTablePrefix(new FirebirdSchemaGrammar);
+    }
+
+    protected function getDefaultPostProcessor()
+    {
+        return new FirebirdProcessor;
     }
 
     /**
@@ -105,32 +100,5 @@ class FirebirdConnection extends DatabaseConnection
         }
 
         return $this->config['version'];
-    }
-
-    public function beginTransaction()
-    {
-      if ($this->transactions == 0 && $this->pdo->getAttribute(PDO::ATTR_AUTOCOMMIT) == 1) {
-        $this->pdo->setAttribute(PDO::ATTR_AUTOCOMMIT, 0);
-      }
-
-      parent::beginTransaction();
-    }
-
-    public function commit()
-    {
-      parent::commit();
-
-      if ($this->transactions == 0 && $this->pdo->getAttribute(PDO::ATTR_AUTOCOMMIT) == 0) {
-        $this->pdo->setAttribute(PDO::ATTR_AUTOCOMMIT, 1);
-      }
-    }
-
-    public function rollBack($toLevel = NULL)
-    {
-      parent::rollBack($toLevel);
-
-      if ($this->transactions == 0 && $this->pdo->getAttribute(PDO::ATTR_AUTOCOMMIT) == 0) {
-        $this->pdo->setAttribute(PDO::ATTR_AUTOCOMMIT, 1);
-      }
     }
 }
